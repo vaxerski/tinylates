@@ -84,8 +84,8 @@ std::string CTinylates::parseTagText(const std::string_view& sv) {
         if (!m_props.contains(std::string{idx})) {
             // try number
             try {
-                const auto IDX = std::stoi(std::string{idx});
-                if (IDX < 0 || IDX >= VEC.size())
+                const size_t IDX = std::stoull(std::string{idx});
+                if (IDX >= VEC.size())
                     return "";
 
                 return VEC.at(IDX);
@@ -98,7 +98,7 @@ std::string CTinylates::parseTagText(const std::string_view& sv) {
 
         const auto IDX = std::any_cast<int>(PROPIDX.m_data);
 
-        if (IDX < 0 || IDX >= VEC.size())
+        if (IDX < 0 || IDX >= (int)VEC.size())
             return "";
 
         return VEC.at(IDX);
