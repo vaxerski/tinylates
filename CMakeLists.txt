@@ -36,5 +36,5 @@ add_library(tinylates ${SRCFILES})
 target_include_directories(
     tinylates
   PUBLIC "./include"
-  PRIVATE "./src")
+  PRIVATE "./src" "./include/tinylates")
 
