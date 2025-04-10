@@ -17,6 +17,7 @@ This is a small C++ library to add templates to HTML and pre-process them.
 
 - Inline conditions
 - Including other files
+- Better error handling than nuking the rendering
 
 ## What this will not do
 
