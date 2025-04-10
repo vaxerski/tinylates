@@ -34,11 +34,12 @@ class CTinylates {
     CTinylates(const std::string& html);
 
     void                       add(const std::string& name, const CTinylatesProp& prop);
+    void                       setTemplateRoot(const std::string& path);
 
     std::optional<std::string> render();
 
   private:
-    std::string                                     m_html;
+    std::string                                     m_html, m_templateRoot;
     std::unordered_map<std::string, CTinylatesProp> m_props;
 
     std::string                                     renderInternal(const std::string& input);
@@ -50,4 +51,5 @@ class CTinylates {
 
     std::string                                     parseTagData(const std::string_view& sv);
     std::string                                     parseTagText(const std::string_view& sv);
+    std::string                                     parseTagInclude(const std::string_view& sv);
 };

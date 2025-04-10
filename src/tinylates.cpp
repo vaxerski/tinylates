@@ -1,6 +1,16 @@
 #include "tinylates/tinylates.hpp"
 
+#include <filesystem>
+#include <fstream>
 #include <sstream>
+
+static std::string readFileAsText(const std::string& path) {
+    std::ifstream ifs(path);
+    auto          res = std::string((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+    if (res.back() == '\n')
+        res.pop_back();
+    return res;
+}
 
 CTinylatesProp::CTinylatesProp(const std::string& data) : m_type(TL_PROP_STRING), m_data(data) {
     ;
@@ -113,9 +123,74 @@ std::string CTinylates::parseTagText(const std::string_view& sv) {
     return "";
 }
 
+void CTinylates::setTemplateRoot(const std::string& path) {
+    m_templateRoot = path;
+}
+
+std::string CTinylates::parseTagInclude(const std::string_view& sv) {
+    const std::string TEMPLATEROOT = m_templateRoot.empty() ? std::filesystem::current_path().string() : m_templateRoot;
+
+    // parse any vars, pass them and return rendered html
+    size_t spacePos = sv.find(' ');
+    if (spacePos == std::string::npos)
+        return "";
+    size_t                                                     spacePos2 = sv.find(' ', spacePos + 1);
+
+    std::string_view                                           filename = sv.substr(spacePos + 1, spacePos2 == std::string::npos ? std::string::npos : spacePos2 - spacePos - 1);
+    std::vector<std::pair<std::string_view, std::string_view>> vars;
+
+    if (spacePos2 != std::string::npos) {
+        while (true) {
+            spacePos = sv.find(' ', spacePos + 1);
+
+            if (spacePos == std::string::npos)
+                break;
+
+            spacePos2 = sv.find(' ', spacePos + 1);
+
+            std::string_view kv = sv.substr(spacePos + 1, spacePos2 == std::string::npos ? std::string::npos : spacePos2 - spacePos - 1);
+
+            if (!kv.contains('='))
+                continue;
+
+            vars.emplace_back(std::make_pair<>(kv.substr(0, kv.find('=')), kv.substr(kv.find('=') + 1)));
+        }
+    }
+
+    std::string     requested = TEMPLATEROOT + "/" + std::string{filename};
+    std::error_code ec;
+
+    requested = std::filesystem::canonical(requested, ec);
+    if (ec)
+        return "";
+
+    // deny loading anything outside of TEMPLATEROOT
+    if (!requested.starts_with(TEMPLATEROOT))
+        return "";
+
+    if (!std::filesystem::exists(requested) || ec)
+        return "";
+
+    const std::string data = readFileAsText(requested);
+
+    for (const auto& [k, v] : vars) {
+        m_props.emplace(std::string{k}, CTinylatesProp{std::string{v}});
+    }
+
+    const auto parsed = renderInternal(data);
+
+    for (const auto& [k, v] : vars) {
+        m_props.erase(std::string{k});
+    }
+
+    return parsed;
+}
+
 std::string CTinylates::parseTagData(const std::string_view& sv) {
     if (sv.starts_with("tl:text"))
         return parseTagText(sv);
+    if (sv.starts_with("tl:include"))
+        return parseTagInclude(sv);
     return "";
 }
 
