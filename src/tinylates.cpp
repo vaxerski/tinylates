@@ -204,13 +204,19 @@ std::string CTinylates::tagNeedsNext(const std::string_view& sv) {
 
 bool CTinylates::parseIfTag(const std::string_view& sv) {
     std::string_view cond = trim(sv.substr(5));
+    bool negative = false;
+
+    if (!cond.empty() && cond.front() == '!') {
+        cond = cond.substr(1);
+        negative = true;
+    }
 
     if (!m_props.contains(std::string{cond}))
         return false;
 
     const auto& PROP = m_props.at(std::string{cond});
 
-    return PROP.truthy();
+    return PROP.truthy() != negative;
 }
 
 std::vector<std::string> CTinylates::parseForTag(const std::string_view& sv) {
